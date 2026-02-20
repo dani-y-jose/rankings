@@ -1,8 +1,10 @@
 const CACHE = 'ranking-v1';
+const BASE = self.registration.scope;
 const ASSETS = [
-  '/index.html',
-  '/manifest.json',
-  '/icon.svg',
+  BASE,
+  BASE + 'index.html',
+  BASE + 'manifest.json',
+  BASE + 'icon.svg',
 ];
 
 self.addEventListener('install', e => {

@@ -2,7 +2,7 @@
   "name": "Ranking",
   "short_name": "Ranking",
   "description": "Rate and review products by features",
-  "start_url": "/index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#f5a623",
