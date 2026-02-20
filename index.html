@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ranking</title>
+  <style>
+    body { font-family: sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; }
+    section { border: 1px solid #ccc; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+    h2 { margin-top: 0; }
+    label { display: block; margin-top: 8px; font-weight: bold; }
+    select, input, textarea { width: 100%; padding: 6px; margin-top: 4px; box-sizing: border-box; }
+    button { margin-top: 10px; padding: 8px 16px; cursor: pointer; }
+    .row { display: flex; gap: 8px; align-items: end; }
+    .row input { flex: 1; }
+    .msg { padding: 8px; margin-top: 8px; border-radius: 4px; }
+    .ok { background: #d4edda; color: #155724; }
+    .err { background: #f8d7da; color: #721c24; }
+    .star-rating { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+    .star-rating label { display: inline; margin: 0; flex: 1; font-weight: bold; }
+    .star-rating .stars { cursor: pointer; font-size: 28px; user-select: none; white-space: nowrap; }
+    .star-rating .stars span { color: #ccc; transition: color 0.15s; }
+    .star-rating .stars span.active { color: #f5a623; }
+    .star-rating .stars span:hover { color: #f5a623; }
+    .star-rating .star-val { width: 45px; text-align: center; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; padding: 4px; }
+    .stars-show { position: relative; display: inline-block; font-size: 20px; white-space: nowrap; }
+    .stars-show .empty { color: #ccc; }
+    .stars-show .filled { position: absolute; top: 0; left: 0; overflow: hidden; white-space: nowrap; color: #f5a623; }
+    .overall { font-size: 18px; font-weight: bold; margin-top: 8px; }
+    .review-card { border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-top: 10px; }
+    .review-card h4 { margin: 0 0 4px; }
+    .review-card small { color: #666; }
+    .review-card li { margin: 4px 0; }
+  </style>
+</head>
+<body>
+  <h1>Ranking</h1>
+
+  <!-- Section 1: Reviewer -->
+  <section>
+    <h2>Reviewer</h2>
+    <label>Select Reviewer</label>
+    <select id="reviewerSelect"><option value="">-- select --</option></select>
+    <div class="row">
+      <input id="reviewerName" placeholder="New reviewer name">
+      <button onclick="createReviewer()">Create</button>
+    </div>
+    <div id="reviewerMsg"></div>
+  </section>
+
+  <!-- Section 2: Place -->
+  <section>
+    <h2>Place</h2>
+    <label>Select Place</label>
+    <select id="placeSelect"><option value="">-- select --</option></select>
+    <label>Name</label>
+    <input id="placeName" placeholder="Place name">
+    <label>Location</label>
+    <input id="placeLocation" placeholder="Location">
+    <label>Country</label>
+    <input id="placeCountry" placeholder="Country">
+    <label>Province</label>
+    <input id="placeProvince" placeholder="Province">
+    <button onclick="createPlace()">Create Place</button>
+    <div id="placeMsg"></div>
+  </section>
+
+  <!-- Section 3: Category & Product -->
+  <section>
+    <h2>Category</h2>
+    <label>Select Category</label>
+    <select id="categorySelect" onchange="loadProducts()"><option value="">-- select --</option></select>
+    <div class="row">
+      <input id="categoryName" placeholder="New category name">
+      <button onclick="createCategory()">Create</button>
+    </div>
+    <div id="categoryMsg"></div>
+
+    <h2 style="margin-top:16px">Product</h2>
+    <label>Select Product</label>
+    <select id="productSelect" onchange="loadFeatures()"><option value="">-- select --</option></select>
+    <div class="row">
+      <input id="productName" placeholder="New product name">
+      <button onclick="createProduct()">Create</button>
+    </div>
+    <div id="productMsg"></div>
+  </section>
+
+  <!-- Section 4: Features -->
+  <section>
+    <h2>Features</h2>
+    <p>Features for the selected product:</p>
+    <ul id="featureList"><li>No product selected</li></ul>
+    <div class="row">
+      <input id="featureName" placeholder="New feature name">
+      <button onclick="createFeature()">Create</button>
+    </div>
+    <div id="featureMsg"></div>
+  </section>
+
+  <!-- Section 5: Submit Review -->
+  <section>
+    <h2>Submit Review</h2>
+    <p>Rate each feature (0 to 5):</p>
+    <div id="starInputs"><p>Select a product with features first.</p></div>
+    <label>Comments</label>
+    <textarea id="reviewComments" rows="3" placeholder="Optional comments..."></textarea>
+    <button onclick="submitReview()">Submit Review</button>
+    <div id="reviewMsg"></div>
+  </section>
+
+  <!-- Section 6: My Reviews -->
+  <section>
+    <h2>My Reviews</h2>
+    <p>Reviews by the selected reviewer:</p>
+    <div id="reviewsList"><p>Select a reviewer to see their reviews.</p></div>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://jlxitraysnvxtsnvymrl.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpseGl0cmF5c252eHRzbnZ5bXJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1OTMyODgsImV4cCI6MjA4NzE2OTI4OH0.4_4mJSnaj2xem8B7cISufWgAGXpUbvlH-HHkqQYQ110';
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // -- helpers --
+    function msg(id, text, ok) {
+      const el = document.getElementById(id);
+      el.innerHTML = '<div class="msg ' + (ok ? 'ok' : 'err') + '">' + text + '</div>';
+      setTimeout(() => el.innerHTML = '', 3000);
+    }
+
+    function val(id) { return document.getElementById(id).value; }
+    function sel(id) { return document.getElementById(id); }
+
+    function setOptions(selectId, items, textKey) {
+      const s = sel(selectId);
+      const old = s.value;
+      s.innerHTML = '<option value="">-- select --</option>';
+      items.forEach(item => {
+        const o = document.createElement('option');
+        o.value = item.id;
+        o.textContent = item[textKey];
+        s.appendChild(o);
+      });
+      if (old) s.value = old;
+    }
+
+    // -- loaders --
+    let features = [];
+
+    async function loadReviewers() {
+      const { data } = await sb.from('reviewers').select('*').order('name');
+      setOptions('reviewerSelect', data || [], 'name');
+    }
+
+    async function loadPlaces() {
+      const { data } = await sb.from('places').select('*').order('name');
+      setOptions('placeSelect', data || [], 'name');
+    }
+
+    async function loadCategories() {
+      const { data } = await sb.from('categories').select('*').order('name');
+      setOptions('categorySelect', data || [], 'name');
+    }
+
+    async function loadProducts() {
+      const catId = val('categorySelect');
+      if (!catId) {
+        sel('productSelect').innerHTML = '<option value="">-- select category first --</option>';
+        features = [];
+        renderFeatures();
+        renderStarInputs();
+        return;
+      }
+      const { data } = await sb.from('products').select('*').eq('category_id', catId).order('name');
+      setOptions('productSelect', data || [], 'name');
+      sel('productSelect').value = '';
+      features = [];
+      renderFeatures();
+      renderStarInputs();
+    }
+
+    async function loadFeatures() {
+      const prodId = val('productSelect');
+      if (!prodId) { features = []; renderFeatures(); renderStarInputs(); return; }
+      const { data } = await sb.from('features').select('*').eq('product_id', prodId).order('name');
+      features = data || [];
+      renderFeatures();
+      renderStarInputs();
+    }
+
+    function renderFeatures() {
+      const ul = sel('featureList');
+      if (features.length === 0) {
+        ul.innerHTML = '<li>No features yet.</li>';
+        return;
+      }
+      ul.innerHTML = features.map(f => '<li>' + f.name + '</li>').join('');
+    }
+
+    function renderStarInputs() {
+      const div = sel('starInputs');
+      if (features.length === 0) {
+        div.innerHTML = '<p>Select a product with features first.</p>';
+        return;
+      }
+      div.innerHTML = features.map(f =>
+        '<div class="star-rating">' +
+          '<label>' + f.name + '</label>' +
+          '<div class="stars" data-for="star_' + f.id + '">' +
+            [1,2,3,4,5].map(n => '<span data-value="' + n + '">&#9733;</span>').join('') +
+          '</div>' +
+          '<input type="number" class="star-val" id="star_' + f.id + '" min="0" max="5" step="0.1" value="0">' +
+        '</div>'
+      ).join('');
+
+      // attach click + hover handlers to each star group
+      div.querySelectorAll('.stars').forEach(function(starsEl) {
+        starsEl.querySelectorAll('span').forEach(function(star) {
+          star.addEventListener('click', function() {
+            var input = sel(starsEl.dataset.for);
+            input.value = star.dataset.value;
+            highlightStars(starsEl, parseInt(star.dataset.value));
+          });
+          star.addEventListener('mouseenter', function() {
+            highlightStars(starsEl, parseInt(star.dataset.value));
+          });
+        });
+        starsEl.addEventListener('mouseleave', function() {
+          var input = sel(starsEl.dataset.for);
+          highlightStars(starsEl, parseFloat(input.value) || 0);
+        });
+      });
+
+      // sync number input changes back to stars
+      div.querySelectorAll('.star-val').forEach(function(input) {
+        input.addEventListener('input', function() {
+          var starsEl = div.querySelector('.stars[data-for="' + input.id + '"]');
+          if (starsEl) highlightStars(starsEl, parseFloat(input.value) || 0);
+        });
+      });
+    }
+
+    function highlightStars(starsEl, value) {
+      starsEl.querySelectorAll('span').forEach(function(s) {
+        s.classList.toggle('active', parseInt(s.dataset.value) <= Math.ceil(value));
+      });
+    }
+
+    function showStars(value) {
+      var pct = (value / 5 * 100).toFixed(1);
+      return '<span class="stars-show">' +
+        '<span class="empty">&#9733;&#9733;&#9733;&#9733;&#9733;</span>' +
+        '<span class="filled" style="width:' + pct + '%">&#9733;&#9733;&#9733;&#9733;&#9733;</span>' +
+        '</span> <strong>' + value.toFixed(1) + '</strong>';
+    }
+
+    // -- creators --
+    async function createReviewer() {
+      const name = val('reviewerName').trim();
+      if (!name) return msg('reviewerMsg', 'Enter a name.', false);
+      const { data, error } = await sb.from('reviewers').insert({ name }).select().single();
+      if (error) return msg('reviewerMsg', error.message, false);
+      msg('reviewerMsg', 'Created!', true);
+      sel('reviewerName').value = '';
+      await loadReviewers();
+      sel('reviewerSelect').value = data.id;
+      loadMyReviews();
+    }
+
+    async function createPlace() {
+      const name = val('placeName').trim();
+      if (!name) return msg('placeMsg', 'Enter a place name.', false);
+      const row = { name };
+      const loc = val('placeLocation').trim(); if (loc) row.location = loc;
+      const country = val('placeCountry').trim(); if (country) row.country = country;
+      const province = val('placeProvince').trim(); if (province) row.province = province;
+      const { data, error } = await sb.from('places').insert(row).select().single();
+      if (error) return msg('placeMsg', error.message, false);
+      msg('placeMsg', 'Created!', true);
+      sel('placeName').value = '';
+      sel('placeLocation').value = '';
+      sel('placeCountry').value = '';
+      sel('placeProvince').value = '';
+      await loadPlaces();
+      sel('placeSelect').value = data.id;
+    }
+
+    async function createCategory() {
+      const name = val('categoryName').trim();
+      if (!name) return msg('categoryMsg', 'Enter a name.', false);
+      const { data, error } = await sb.from('categories').insert({ name }).select().single();
+      if (error) return msg('categoryMsg', error.message, false);
+      msg('categoryMsg', 'Created!', true);
+      sel('categoryName').value = '';
+      await loadCategories();
+      sel('categorySelect').value = data.id;
+      loadProducts();
+    }
+
+    async function createProduct() {
+      const name = val('productName').trim();
+      const catId = val('categorySelect');
+      if (!name) return msg('productMsg', 'Enter a name.', false);
+      if (!catId) return msg('productMsg', 'Select a category first.', false);
+      const { data, error } = await sb.from('products').insert({ name, category_id: parseInt(catId) }).select().single();
+      if (error) return msg('productMsg', error.message, false);
+      msg('productMsg', 'Created!', true);
+      sel('productName').value = '';
+      await loadProducts();
+      sel('productSelect').value = data.id;
+      loadFeatures();
+    }
+
+    async function createFeature() {
+      const name = val('featureName').trim();
+      const prodId = val('productSelect');
+      if (!name) return msg('featureMsg', 'Enter a name.', false);
+      if (!prodId) return msg('featureMsg', 'Select a product first.', false);
+      const { error } = await sb.from('features').insert({ name, product_id: parseInt(prodId) }).select().single();
+      if (error) return msg('featureMsg', error.message, false);
+      msg('featureMsg', 'Created!', true);
+      sel('featureName').value = '';
+      loadFeatures();
+    }
+
+    // -- submit review --
+    async function submitReview() {
+      const reviewerId = val('reviewerSelect');
+      const placeId = val('placeSelect');
+      const productId = val('productSelect');
+      const comments = val('reviewComments').trim();
+
+      if (!reviewerId) return msg('reviewMsg', 'Select a reviewer.', false);
+      if (!placeId) return msg('reviewMsg', 'Select a place.', false);
+      if (!productId) return msg('reviewMsg', 'Select a product.', false);
+      if (features.length === 0) return msg('reviewMsg', 'Add features to the product first.', false);
+
+      // validate star values
+      for (const f of features) {
+        const v = parseFloat(val('star_' + f.id));
+        if (isNaN(v) || v < 0 || v > 5) return msg('reviewMsg', 'Star for "' + f.name + '" must be 0-5.', false);
+        if (Math.round(v * 10) !== v * 10) return msg('reviewMsg', 'Star for "' + f.name + '" allows only 1 decimal.', false);
+      }
+
+      // insert review
+      const { data: review, error: revErr } = await sb.from('reviews').insert({
+        reviewer_id: parseInt(reviewerId),
+        place_id: parseInt(placeId),
+        product_id: parseInt(productId),
+        timestamp: new Date().toISOString(),
+        comments: comments || null,
+      }).select().single();
+
+      if (revErr) return msg('reviewMsg', revErr.message, false);
+
+      // insert stars
+      const starRows = features.map(f => ({
+        feature_id: f.id,
+        review_id: review.id,
+        value: parseFloat(val('star_' + f.id)),
+      }));
+
+      const { error: starErr } = await sb.from('stars').insert(starRows);
+      if (starErr) return msg('reviewMsg', starErr.message, false);
+
+      msg('reviewMsg', 'Review submitted!', true);
+      sel('reviewComments').value = '';
+      loadMyReviews();
+    }
+
+    // -- load my reviews --
+    async function loadMyReviews() {
+      const reviewerId = val('reviewerSelect');
+      const div = sel('reviewsList');
+      if (!reviewerId) { div.innerHTML = '<p>Select a reviewer to see their reviews.</p>'; return; }
+
+      const { data, error } = await sb
+        .from('reviews')
+        .select('*, products(name), places(name), stars(value, features(name))')
+        .eq('reviewer_id', reviewerId)
+        .order('timestamp', { ascending: false });
+
+      if (error) { div.innerHTML = '<p>Error loading reviews.</p>'; return; }
+      if (!data || data.length === 0) { div.innerHTML = '<p>No reviews yet.</p>'; return; }
+
+      div.innerHTML = data.map(r => {
+        const date = r.timestamp ? new Date(r.timestamp).toLocaleDateString() : 'N/A';
+        const starsList = r.stars || [];
+        const avg = starsList.length > 0
+          ? starsList.reduce((sum, s) => sum + s.value, 0) / starsList.length
+          : 0;
+        const featuresHtml = starsList
+          .map(s => '<li>' + (s.features ? s.features.name : '?') + ': ' + showStars(s.value) + '</li>')
+          .join('');
+        return '<div class="review-card">' +
+          '<h4>' + (r.products ? r.products.name : '?') + ' at ' + (r.places ? r.places.name : '?') + '</h4>' +
+          '<small>' + date + '</small>' +
+          (r.comments ? '<p>' + r.comments + '</p>' : '') +
+          '<div class="overall">Overall: ' + showStars(avg) + '</div>' +
+          '<ul>' + featuresHtml + '</ul>' +
+        '</div>';
+      }).join('');
+    }
+
+    // -- on reviewer change, load their reviews --
+    sel('reviewerSelect').addEventListener('change', loadMyReviews);
+
+    // -- init --
+    loadReviewers();
+    loadPlaces();
+    loadCategories();
+  </script>
+</body>
+</html>
