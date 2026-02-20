@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ranking</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f5a623">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
   <style>
     body { font-family: sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; }
     section { border: 1px solid #ccc; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
@@ -410,6 +413,11 @@
     loadReviewers();
     loadPlaces();
     loadCategories();
+
+    // -- register service worker --
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
   </script>
 </body>
 </html>
