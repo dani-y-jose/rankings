@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,117 +8,715 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#f5a623">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; }
-    section { border: 1px solid #ccc; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
-    h2 { margin-top: 0; }
-    label { display: block; margin-top: 8px; font-weight: bold; }
-    select, input, textarea { width: 100%; padding: 6px; margin-top: 4px; box-sizing: border-box; }
-    button { margin-top: 10px; padding: 8px 16px; cursor: pointer; }
-    .row { display: flex; gap: 8px; align-items: end; }
-    .row input { flex: 1; }
-    .msg { padding: 8px; margin-top: 8px; border-radius: 4px; }
-    .ok { background: #d4edda; color: #155724; }
-    .err { background: #f8d7da; color: #721c24; }
-    .star-rating { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
-    .star-rating label { display: inline; margin: 0; flex: 1; font-weight: bold; }
-    .star-rating .stars { cursor: pointer; font-size: 28px; user-select: none; white-space: nowrap; }
-    .star-rating .stars span { color: #ccc; transition: color 0.15s; }
-    .star-rating .stars span.active { color: #f5a623; }
-    .star-rating .stars span:hover { color: #f5a623; }
-    .star-rating .star-val { width: 45px; text-align: center; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; padding: 4px; }
-    .stars-show { position: relative; display: inline-block; font-size: 20px; white-space: nowrap; }
-    .stars-show .empty { color: #ccc; }
-    .stars-show .filled { position: absolute; top: 0; left: 0; overflow: hidden; white-space: nowrap; color: #f5a623; }
-    .overall { font-size: 18px; font-weight: bold; margin-top: 8px; }
-    .review-card { border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-top: 10px; }
-    .review-card h4 { margin: 0 0 4px; }
-    .review-card small { color: #666; }
-    .review-card li { margin: 4px 0; }
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --accent: #f5a623;
+      --accent-dark: #d4881a;
+      --bg: #0f0f14;
+      --surface: #1a1a24;
+      --surface2: #22222f;
+      --border: #2e2e3e;
+      --text: #e8e8f0;
+      --muted: #888898;
+      --ok-bg: #1a2e1a;
+      --ok-text: #6fcf6f;
+      --err-bg: #2e1a1a;
+      --err-text: #cf6f6f;
+      --radius: 12px;
+      --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 0 0 60px;
+    }
+
+    /* ── Header ── */
+    .app-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 24px;
+      text-align: center;
+    }
+
+    .app-header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.03em;
+    }
+
+    /* ── Progress stepper ── */
+    .stepper-wrap {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px;
+    }
+
+    .stepper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .step-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .step-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 16px;
+      left: calc(50% + 16px);
+      right: calc(-50% + 16px);
+      height: 2px;
+      background: var(--border);
+      transition: background var(--transition);
+      z-index: -1;
+    }
+
+    .step-item.done:not(:last-child)::after {
+      background: var(--accent);
+    }
+
+    .step-circle {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--surface2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      transition: all var(--transition);
+    }
+
+    .step-item.active .step-circle {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #000;
+      box-shadow: 0 0 0 4px rgba(245, 166, 35, 0.2);
+    }
+
+    .step-item.done .step-circle {
+      border-color: var(--accent);
+      background: var(--accent-dark);
+      color: #fff;
+    }
+
+    .step-label {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--muted);
+      text-align: center;
+      white-space: nowrap;
+      transition: color var(--transition);
+    }
+
+    .step-item.active .step-label {
+      color: var(--accent);
+    }
+
+    .step-item.done .step-label {
+      color: var(--text);
+    }
+
+    /* ── Content area ── */
+    .content {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 28px 20px;
+    }
+
+    /* ── Step panels ── */
+    .step-panel {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .step-panel.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .panel-header {
+      margin-bottom: 24px;
+    }
+
+    .panel-header h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .panel-header p {
+      color: var(--muted);
+      font-size: 0.875rem;
+      margin-top: 4px;
+    }
+
+    /* ── Form elements ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .card h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 5px;
+      margin-top: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    label:first-child {
+      margin-top: 0;
+    }
+
+    select,
+    input[type="text"],
+    input[type="number"],
+    textarea {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.9rem;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      outline: none;
+    }
+
+    select:focus,
+    input:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(245, 166, 35, 0.15);
+    }
+
+    select option {
+      background: var(--surface2);
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      margin-top: 4px;
+    }
+
+    .row input {
+      flex: 1;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all var(--transition);
+    }
+
+    .btn-accent {
+      background: var(--accent);
+      color: #000;
+    }
+
+    .btn-accent:hover {
+      background: var(--accent-dark);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-ghost {
+      background: var(--surface2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover {
+      color: var(--text);
+    }
+
+    /* ── Navigation bar ── */
+    .nav-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 28px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .nav-bar .step-info {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    /* ── Messages ── */
+    .msg-wrap {
+      min-height: 24px;
+      margin-top: 8px;
+    }
+
+    .msg {
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      display: inline-block;
+    }
+
+    .ok {
+      background: var(--ok-bg);
+      color: var(--ok-text);
+    }
+
+    .err {
+      background: var(--err-bg);
+      color: var(--err-text);
+    }
+
+    /* ── Stars ── */
+    .star-rating {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .star-rating:last-child {
+      border-bottom: none;
+    }
+
+    .star-rating label {
+      display: inline;
+      margin: 0;
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 0.9rem;
+      color: var(--text);
+      flex: 1;
+    }
+
+    .star-rating .stars {
+      cursor: pointer;
+      font-size: 26px;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .star-rating .stars span {
+      color: var(--border);
+      transition: color 0.15s;
+    }
+
+    .star-rating .stars span.active {
+      color: var(--accent);
+    }
+
+    .star-rating .stars span:hover {
+      color: var(--accent);
+    }
+
+    .star-rating .star-val {
+      width: 52px;
+      text-align: center;
+      font-size: 0.85rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px;
+      background: var(--surface2);
+      color: var(--text);
+    }
+
+    .stars-show {
+      position: relative;
+      display: inline-block;
+      font-size: 18px;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+
+    .stars-show .empty {
+      color: var(--border);
+    }
+
+    .stars-show .filled {
+      position: absolute;
+      top: 0;
+      left: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      color: var(--accent);
+    }
+
+    /* ── Review cards ── */
+    .review-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 12px;
+      transition: border-color var(--transition);
+    }
+
+    .review-card:hover {
+      border-color: var(--accent);
+    }
+
+    .review-card h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .review-card small {
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .review-card p {
+      margin: 8px 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .review-card ul {
+      list-style: none;
+      margin-top: 10px;
+    }
+
+    .review-card li {
+      margin: 5px 0;
+      font-size: 0.875rem;
+      color: var(--text);
+    }
+
+    .overall {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+
+    /* ── Feature list ── */
+    #featureList {
+      list-style: none;
+    }
+
+    #featureList li {
+      padding: 7px 10px;
+      background: var(--surface2);
+      border-radius: 6px;
+      margin-bottom: 6px;
+      font-size: 0.875rem;
+      color: var(--text);
+    }
+
+    /* ── Divider ── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 16px 0;
+    }
+
+    /* ── Summary bar ── */
+    .summary-bar {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 16px;
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .summary-bar span strong {
+      color: var(--text);
+    }
+
+    @media (max-width: 480px) {
+      .step-label {
+        display: none;
+      }
+
+      .stepper-wrap {
+        padding: 12px 10px;
+      }
+    }
   </style>
 </head>
+
 <body>
-  <h1>Ranking</h1>
 
-  <!-- Section 1: Reviewer -->
-  <section>
-    <h2>Reviewer</h2>
-    <label>Select Reviewer</label>
-    <select id="reviewerSelect"><option value="">-- select --</option></select>
-    <div class="row">
-      <input id="reviewerName" placeholder="New reviewer name">
-      <button onclick="createReviewer()">Create</button>
+  <header class="app-header">
+    <h1>⭐ Ranking</h1>
+  </header>
+
+  <!-- Progress Stepper -->
+  <div class="stepper-wrap">
+    <div class="stepper">
+      <div class="step-item active" id="si-0" onclick="goToStep(0)">
+        <div class="step-circle">1</div>
+        <div class="step-label">Reviewer</div>
+      </div>
+      <div class="step-item" id="si-1" onclick="goToStep(1)">
+        <div class="step-circle">2</div>
+        <div class="step-label">Place</div>
+      </div>
+      <div class="step-item" id="si-2" onclick="goToStep(2)">
+        <div class="step-circle">3</div>
+        <div class="step-label">Product</div>
+      </div>
+      <div class="step-item" id="si-3" onclick="goToStep(3)">
+        <div class="step-circle">4</div>
+        <div class="step-label">Rate</div>
+      </div>
+      <div class="step-item" id="si-4" onclick="goToStep(4)">
+        <div class="step-circle">5</div>
+        <div class="step-label">History</div>
+      </div>
     </div>
-    <div id="reviewerMsg"></div>
-  </section>
+  </div>
 
-  <!-- Section 2: Place -->
-  <section>
-    <h2>Place</h2>
-    <label>Select Place</label>
-    <select id="placeSelect"><option value="">-- select --</option></select>
-    <label>Name</label>
-    <input id="placeName" placeholder="Place name">
-    <label>Location</label>
-    <input id="placeLocation" placeholder="Location">
-    <label>Country</label>
-    <input id="placeCountry" placeholder="Country">
-    <label>Province</label>
-    <input id="placeProvince" placeholder="Province">
-    <button onclick="createPlace()">Create Place</button>
-    <div id="placeMsg"></div>
-  </section>
+  <div class="content">
 
-  <!-- Section 3: Category & Product -->
-  <section>
-    <h2>Category</h2>
-    <label>Select Category</label>
-    <select id="categorySelect" onchange="loadProducts()"><option value="">-- select --</option></select>
-    <div class="row">
-      <input id="categoryName" placeholder="New category name">
-      <button onclick="createCategory()">Create</button>
+    <!-- Step 1: Reviewer -->
+    <div class="step-panel active" id="step-0">
+      <div class="panel-header">
+        <h2>Who are you?</h2>
+        <p>Select your name or create a new reviewer profile.</p>
+      </div>
+      <div class="card">
+        <h3>Select Reviewer</h3>
+        <label>Your name</label>
+        <select id="reviewerSelect"></select>
+      </div>
+      <div class="card">
+        <h3>New Reviewer</h3>
+        <label>Name</label>
+        <div class="row">
+          <input id="reviewerName" type="text" placeholder="Enter your name">
+          <button class="btn btn-accent" onclick="createReviewer()">Create</button>
+        </div>
+        <div class="msg-wrap">
+          <div id="reviewerMsg"></div>
+        </div>
+      </div>
+      <div class="nav-bar">
+        <span class="step-info">Step 1 of 5</span>
+        <button class="btn btn-accent" onclick="nextStep()">Next →</button>
+      </div>
     </div>
-    <div id="categoryMsg"></div>
 
-    <h2 style="margin-top:16px">Product</h2>
-    <label>Select Product</label>
-    <select id="productSelect" onchange="loadFeatures()"><option value="">-- select --</option></select>
-    <div class="row">
-      <input id="productName" placeholder="New product name">
-      <button onclick="createProduct()">Create</button>
+    <!-- Step 2: Place -->
+    <div class="step-panel" id="step-1">
+      <div class="panel-header">
+        <h2>Where was it?</h2>
+        <p>Select an existing place or add a new one.</p>
+      </div>
+      <div id="reviewerSummary1" class="summary-bar" style="display:none"></div>
+      <div class="card">
+        <h3>Select Place</h3>
+        <label>Place</label>
+        <select id="placeSelect"></select>
+      </div>
+      <div class="card">
+        <h3>New Place</h3>
+        <label>Name</label>
+        <input id="placeName" type="text" placeholder="Place name">
+        <label>Location</label>
+        <input id="placeLocation" type="text" placeholder="Location">
+        <label>Country</label>
+        <input id="placeCountry" type="text" placeholder="Country">
+        <label>Province</label>
+        <input id="placeProvince" type="text" placeholder="Province">
+        <button class="btn btn-accent" style="margin-top:14px" onclick="createPlace()">Create Place</button>
+        <div class="msg-wrap">
+          <div id="placeMsg"></div>
+        </div>
+      </div>
+      <div class="nav-bar">
+        <button class="btn btn-ghost" onclick="prevStep()">← Back</button>
+        <span class="step-info">Step 2 of 5</span>
+        <button class="btn btn-accent" onclick="nextStep()">Next →</button>
+      </div>
     </div>
-    <div id="productMsg"></div>
-  </section>
 
-  <!-- Section 4: Features -->
-  <section>
-    <h2>Features</h2>
-    <p>Features for the selected product:</p>
-    <ul id="featureList"><li>No product selected</li></ul>
-    <div class="row">
-      <input id="featureName" placeholder="New feature name">
-      <button onclick="createFeature()">Create</button>
+    <!-- Step 3: Category, Product & Features -->
+    <div class="step-panel" id="step-2">
+      <div class="panel-header">
+        <h2>What are you rating?</h2>
+        <p>Choose a category, product and manage its features.</p>
+      </div>
+      <div id="reviewerSummary2" class="summary-bar" style="display:none"></div>
+      <div class="card">
+        <h3>Category</h3>
+        <label>Select Category</label>
+        <select id="categorySelect" onchange="loadProducts()"></select>
+        <div class="row" style="margin-top:12px">
+          <input id="categoryName" type="text" placeholder="New category name">
+          <button class="btn btn-outline" onclick="createCategory()">+ Add</button>
+        </div>
+        <div class="msg-wrap">
+          <div id="categoryMsg"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Product</h3>
+        <label>Select Product</label>
+        <select id="productSelect" onchange="loadFeatures()"></select>
+        <div class="row" style="margin-top:12px">
+          <input id="productName" type="text" placeholder="New product name">
+          <button class="btn btn-outline" onclick="createProduct()">+ Add</button>
+        </div>
+        <div class="msg-wrap">
+          <div id="productMsg"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Features</h3>
+        <ul id="featureList">
+          <li style="color:var(--muted)">Select a product first.</li>
+        </ul>
+        <hr class="divider">
+        <label>Add Feature</label>
+        <div class="row">
+          <input id="featureName" type="text" placeholder="New feature name">
+          <button class="btn btn-outline" onclick="createFeature()">+ Add</button>
+        </div>
+        <div class="msg-wrap">
+          <div id="featureMsg"></div>
+        </div>
+      </div>
+      <div class="nav-bar">
+        <button class="btn btn-ghost" onclick="prevStep()">← Back</button>
+        <span class="step-info">Step 3 of 5</span>
+        <button class="btn btn-accent" onclick="nextStep()">Next →</button>
+      </div>
     </div>
-    <div id="featureMsg"></div>
-  </section>
 
-  <!-- Section 5: Submit Review -->
-  <section>
-    <h2>Submit Review</h2>
-    <p>Rate each feature (0 to 5):</p>
-    <div id="starInputs"><p>Select a product with features first.</p></div>
-    <label>Comments</label>
-    <textarea id="reviewComments" rows="3" placeholder="Optional comments..."></textarea>
-    <button onclick="submitReview()">Submit Review</button>
-    <div id="reviewMsg"></div>
-  </section>
+    <!-- Step 4: Rate -->
+    <div class="step-panel" id="step-3">
+      <div class="panel-header">
+        <h2>Rate it!</h2>
+        <p>Give each feature a star rating and leave an optional comment.</p>
+      </div>
+      <div id="rateSummary" class="summary-bar" style="display:none"></div>
+      <div class="card">
+        <h3>Feature Ratings</h3>
+        <div id="starInputs">
+          <p style="color:var(--muted)">Select a product with features first.</p>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Comments</h3>
+        <textarea id="reviewComments" rows="3" placeholder="Optional comments..."></textarea>
+      </div>
+      <button class="btn btn-accent" style="width:100%;justify-content:center;padding:14px"
+        onclick="submitReview()">Submit Review ✓</button>
+      <div class="msg-wrap" style="margin-top:10px">
+        <div id="reviewMsg"></div>
+      </div>
+      <div class="nav-bar">
+        <button class="btn btn-ghost" onclick="prevStep()">← Back</button>
+        <span class="step-info">Step 4 of 5</span>
+        <button class="btn btn-accent" onclick="nextStep()">History →</button>
+      </div>
+    </div>
 
-  <!-- Section 6: My Reviews -->
-  <section>
-    <h2>My Reviews</h2>
-    <p>Reviews by the selected reviewer:</p>
-    <div id="reviewsList"><p>Select a reviewer to see their reviews.</p></div>
-  </section>
+    <!-- Step 5: History -->
+    <div class="step-panel" id="step-4">
+      <div class="panel-header">
+        <h2>My Reviews</h2>
+        <p>All reviews submitted by the selected reviewer.</p>
+      </div>
+      <div id="reviewsList">
+        <p style="color:var(--muted)">Select a reviewer to see their reviews.</p>
+      </div>
+      <div class="nav-bar">
+        <button class="btn btn-ghost" onclick="prevStep()">← Back</button>
+        <span class="step-info">Step 5 of 5</span>
+        <button class="btn btn-accent" onclick="goToStep(0)">New Review ↺</button>
+      </div>
+    </div>
+
+  </div><!-- /content -->
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
@@ -125,13 +724,37 @@
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpseGl0cmF5c252eHRzbnZ5bXJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1OTMyODgsImV4cCI6MjA4NzE2OTI4OH0.4_4mJSnaj2xem8B7cISufWgAGXpUbvlH-HHkqQYQ110';
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // -- helpers --
+    // ── step state ──
+    let currentStep = 0;
+    const TOTAL_STEPS = 5;
+
+    function goToStep(n) {
+      if (n < 0 || n >= TOTAL_STEPS) return;
+      document.getElementById('step-' + currentStep).classList.remove('active');
+      document.getElementById('si-' + currentStep).classList.remove('active');
+      currentStep = n;
+      document.getElementById('step-' + currentStep).classList.add('active');
+      // update stepper visuals
+      for (let i = 0; i < TOTAL_STEPS; i++) {
+        const si = document.getElementById('si-' + i);
+        si.classList.toggle('done', i < currentStep);
+        si.classList.toggle('active', i === currentStep);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (currentStep === 3) updateRateSummary();
+      if (currentStep === 4) loadMyReviews();
+      updateContextBars();
+    }
+
+    function nextStep() { goToStep(currentStep + 1); }
+    function prevStep() { goToStep(currentStep - 1); }
+
+    // ── helpers ──
     function msg(id, text, ok) {
       const el = document.getElementById(id);
       el.innerHTML = '<div class="msg ' + (ok ? 'ok' : 'err') + '">' + text + '</div>';
       setTimeout(() => el.innerHTML = '', 3000);
     }
-
     function val(id) { return document.getElementById(id).value; }
     function sel(id) { return document.getElementById(id); }
 
@@ -148,7 +771,47 @@
       if (old) s.value = old;
     }
 
-    // -- loaders --
+    function updateContextBars() {
+      const rName = sel('reviewerSelect').options[sel('reviewerSelect').selectedIndex]?.text || '';
+      const pName = sel('placeSelect').options[sel('placeSelect').selectedIndex]?.text || '';
+      const catName = sel('categorySelect').options[sel('categorySelect').selectedIndex]?.text || '';
+      const prodName = sel('productSelect').options[sel('productSelect').selectedIndex]?.text || '';
+
+      function barHtml(parts) {
+        return parts.filter(p => p[1]).map(p => '<span><strong>' + p[0] + ':</strong> ' + p[1] + '</span>').join('');
+      }
+
+      const b1 = sel('reviewerSummary1');
+      if (b1) {
+        const h = barHtml([['Reviewer', rName !== '-- select --' ? rName : '']]);
+        b1.innerHTML = h; b1.style.display = h ? 'flex' : 'none';
+      }
+      const b2 = sel('reviewerSummary2');
+      if (b2) {
+        const h = barHtml([['Reviewer', rName !== '-- select --' ? rName : ''], ['Place', pName !== '-- select --' ? pName : '']]);
+        b2.innerHTML = h; b2.style.display = h ? 'flex' : 'none';
+      }
+    }
+
+    function updateRateSummary() {
+      const rName = sel('reviewerSelect').options[sel('reviewerSelect').selectedIndex]?.text || '';
+      const pName = sel('placeSelect').options[sel('placeSelect').selectedIndex]?.text || '';
+      const prodName = sel('productSelect').options[sel('productSelect').selectedIndex]?.text || '';
+      const bar = sel('rateSummary');
+      const parts = [
+        ['Reviewer', rName !== '-- select --' ? rName : ''],
+        ['Place', pName !== '-- select --' ? pName : ''],
+        ['Product', prodName !== '-- select --' ? prodName : ''],
+      ].filter(p => p[1]);
+      if (parts.length) {
+        bar.innerHTML = parts.map(p => '<span><strong>' + p[0] + ':</strong> ' + p[1] + '</span>').join('');
+        bar.style.display = 'flex';
+      } else {
+        bar.style.display = 'none';
+      }
+    }
+
+    // ── loaders ──
     let features = [];
 
     async function loadReviewers() {
@@ -195,7 +858,7 @@
     function renderFeatures() {
       const ul = sel('featureList');
       if (features.length === 0) {
-        ul.innerHTML = '<li>No features yet.</li>';
+        ul.innerHTML = '<li style="color:var(--muted)">No features yet.</li>';
         return;
       }
       ul.innerHTML = features.map(f => '<li>' + f.name + '</li>').join('');
@@ -204,40 +867,38 @@
     function renderStarInputs() {
       const div = sel('starInputs');
       if (features.length === 0) {
-        div.innerHTML = '<p>Select a product with features first.</p>';
+        div.innerHTML = '<p style="color:var(--muted)">Select a product with features first.</p>';
         return;
       }
       div.innerHTML = features.map(f =>
         '<div class="star-rating">' +
-          '<label>' + f.name + '</label>' +
-          '<div class="stars" data-for="star_' + f.id + '">' +
-            [1,2,3,4,5].map(n => '<span data-value="' + n + '">&#9733;</span>').join('') +
-          '</div>' +
-          '<input type="number" class="star-val" id="star_' + f.id + '" min="0" max="5" step="0.1" value="0">' +
+        '<label>' + f.name + '</label>' +
+        '<div class="stars" data-for="star_' + f.id + '">' +
+        [1, 2, 3, 4, 5].map(n => '<span data-value="' + n + '">&#9733;</span>').join('') +
+        '</div>' +
+        '<input type="number" class="star-val" id="star_' + f.id + '" min="0" max="5" step="0.1" value="0">' +
         '</div>'
       ).join('');
 
-      // attach click + hover handlers to each star group
-      div.querySelectorAll('.stars').forEach(function(starsEl) {
-        starsEl.querySelectorAll('span').forEach(function(star) {
-          star.addEventListener('click', function() {
+      div.querySelectorAll('.stars').forEach(function (starsEl) {
+        starsEl.querySelectorAll('span').forEach(function (star) {
+          star.addEventListener('click', function () {
             var input = sel(starsEl.dataset.for);
             input.value = star.dataset.value;
             highlightStars(starsEl, parseInt(star.dataset.value));
           });
-          star.addEventListener('mouseenter', function() {
+          star.addEventListener('mouseenter', function () {
             highlightStars(starsEl, parseInt(star.dataset.value));
           });
         });
-        starsEl.addEventListener('mouseleave', function() {
+        starsEl.addEventListener('mouseleave', function () {
           var input = sel(starsEl.dataset.for);
           highlightStars(starsEl, parseFloat(input.value) || 0);
         });
       });
 
-      // sync number input changes back to stars
-      div.querySelectorAll('.star-val').forEach(function(input) {
-        input.addEventListener('input', function() {
+      div.querySelectorAll('.star-val').forEach(function (input) {
+        input.addEventListener('input', function () {
           var starsEl = div.querySelector('.stars[data-for="' + input.id + '"]');
           if (starsEl) highlightStars(starsEl, parseFloat(input.value) || 0);
         });
@@ -245,7 +906,7 @@
     }
 
     function highlightStars(starsEl, value) {
-      starsEl.querySelectorAll('span').forEach(function(s) {
+      starsEl.querySelectorAll('span').forEach(function (s) {
         s.classList.toggle('active', parseInt(s.dataset.value) <= Math.ceil(value));
       });
     }
@@ -258,7 +919,7 @@
         '</span> <strong>' + value.toFixed(1) + '</strong>';
     }
 
-    // -- creators --
+    // ── creators ──
     async function createReviewer() {
       const name = val('reviewerName').trim();
       if (!name) return msg('reviewerMsg', 'Enter a name.', false);
@@ -327,26 +988,24 @@
       loadFeatures();
     }
 
-    // -- submit review --
+    // ── submit review ──
     async function submitReview() {
       const reviewerId = val('reviewerSelect');
       const placeId = val('placeSelect');
       const productId = val('productSelect');
       const comments = val('reviewComments').trim();
 
-      if (!reviewerId) return msg('reviewMsg', 'Select a reviewer.', false);
-      if (!placeId) return msg('reviewMsg', 'Select a place.', false);
-      if (!productId) return msg('reviewMsg', 'Select a product.', false);
-      if (features.length === 0) return msg('reviewMsg', 'Add features to the product first.', false);
+      if (!reviewerId) return msg('reviewMsg', 'Select a reviewer first (Step 1).', false);
+      if (!placeId) return msg('reviewMsg', 'Select a place first (Step 2).', false);
+      if (!productId) return msg('reviewMsg', 'Select a product first (Step 3).', false);
+      if (features.length === 0) return msg('reviewMsg', 'Add features to the product first (Step 3).', false);
 
-      // validate star values
       for (const f of features) {
         const v = parseFloat(val('star_' + f.id));
-        if (isNaN(v) || v < 0 || v > 5) return msg('reviewMsg', 'Star for "' + f.name + '" must be 0-5.', false);
+        if (isNaN(v) || v < 0 || v > 5) return msg('reviewMsg', 'Star for "' + f.name + '" must be 0–5.', false);
         if (Math.round(v * 10) !== v * 10) return msg('reviewMsg', 'Star for "' + f.name + '" allows only 1 decimal.', false);
       }
 
-      // insert review
       const { data: review, error: revErr } = await sb.from('reviews').insert({
         reviewer_id: parseInt(reviewerId),
         place_id: parseInt(placeId),
@@ -357,7 +1016,6 @@
 
       if (revErr) return msg('reviewMsg', revErr.message, false);
 
-      // insert stars
       const starRows = features.map(f => ({
         feature_id: f.id,
         review_id: review.id,
@@ -367,16 +1025,16 @@
       const { error: starErr } = await sb.from('stars').insert(starRows);
       if (starErr) return msg('reviewMsg', starErr.message, false);
 
-      msg('reviewMsg', 'Review submitted!', true);
+      msg('reviewMsg', '✅ Review submitted! Going to history…', true);
       sel('reviewComments').value = '';
-      loadMyReviews();
+      setTimeout(() => goToStep(4), 1200);
     }
 
-    // -- load my reviews --
+    // ── load my reviews ──
     async function loadMyReviews() {
       const reviewerId = val('reviewerSelect');
       const div = sel('reviewsList');
-      if (!reviewerId) { div.innerHTML = '<p>Select a reviewer to see their reviews.</p>'; return; }
+      if (!reviewerId) { div.innerHTML = '<p style="color:var(--muted)">Select a reviewer to see their reviews.</p>'; return; }
 
       const { data, error } = await sb
         .from('reviews')
@@ -384,8 +1042,8 @@
         .eq('reviewer_id', reviewerId)
         .order('timestamp', { ascending: false });
 
-      if (error) { div.innerHTML = '<p>Error loading reviews.</p>'; return; }
-      if (!data || data.length === 0) { div.innerHTML = '<p>No reviews yet.</p>'; return; }
+      if (error) { div.innerHTML = '<p style="color:var(--err-text)">Error loading reviews.</p>'; return; }
+      if (!data || data.length === 0) { div.innerHTML = '<p style="color:var(--muted)">No reviews yet.</p>'; return; }
 
       div.innerHTML = data.map(r => {
         const date = r.timestamp ? new Date(r.timestamp).toLocaleDateString() : 'N/A';
@@ -402,22 +1060,27 @@
           (r.comments ? '<p>' + r.comments + '</p>' : '') +
           '<div class="overall">Overall: ' + showStars(avg) + '</div>' +
           '<ul>' + featuresHtml + '</ul>' +
-        '</div>';
+          '</div>';
       }).join('');
     }
 
-    // -- on reviewer change, load their reviews --
-    sel('reviewerSelect').addEventListener('change', loadMyReviews);
+    // ── events ──
+    sel('reviewerSelect').addEventListener('change', () => {
+      updateContextBars();
+      loadMyReviews();
+    });
+    sel('placeSelect').addEventListener('change', updateContextBars);
+    sel('productSelect').addEventListener('change', loadFeatures);
 
-    // -- init --
+    // ── init ──
     loadReviewers();
     loadPlaces();
     loadCategories();
 
-    // -- register service worker --
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js');
     }
   </script>
 </body>
+
 </html>
