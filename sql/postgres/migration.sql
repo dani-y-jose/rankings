@@ -18,7 +18,7 @@ create table places
     name     text,
     location text,
     country  text,
-    province text
+    city text
 );
 
 create table reviewers

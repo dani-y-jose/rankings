@@ -1000,6 +1000,15 @@
       if (!productId) return msg('reviewMsg', 'Select a product first (Step 3).', false);
       if (features.length === 0) return msg('reviewMsg', 'Add features to the product first (Step 3).', false);
 
+      // Check for an existing review with the same reviewer + place + product
+      const { data: existing } = await sb.from('reviews')
+        .select('id')
+        .eq('reviewer_id', parseInt(reviewerId))
+        .eq('place_id', parseInt(placeId))
+        .eq('product_id', parseInt(productId))
+        .maybeSingle();
+      if (existing) return msg('reviewMsg', '⚠️ You\'ve already reviewed this product at this place.', false);
+
       for (const f of features) {
         const v = parseFloat(val('star_' + f.id));
         if (isNaN(v) || v < 0 || v > 5) return msg('reviewMsg', 'Star for "' + f.name + '" must be 0–5.', false);
