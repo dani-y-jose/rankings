@@ -593,6 +593,10 @@
       <div id="reviewerSummary1" class="summary-bar" style="display:none"></div>
       <div class="card">
         <h3>Select Place</h3>
+        <label>Filter by Category</label>
+        <select id="placeCategoryFilter" onchange="loadPlaces()">
+          <option value="">-- all categories --</option>
+        </select>
         <label>Place</label>
         <select id="placeSelect"></select>
       </div>
@@ -606,6 +610,10 @@
         <input id="placeCountry" type="text" placeholder="Country">
         <label>City</label>
         <input id="placeCity" type="text" placeholder="City">
+        <label>Category</label>
+        <select id="placeCategorySelect">
+          <option value="">-- select category --</option>
+        </select>
         <button class="btn btn-accent" style="margin-top:14px" onclick="createPlace()">Create Place</button>
         <div class="msg-wrap">
           <div id="placeMsg"></div>
@@ -820,13 +828,39 @@
     }
 
     async function loadPlaces() {
-      const { data } = await sb.from('places').select('*').order('name');
+      const catId = val('placeCategoryFilter');
+      let q = sb.from('places').select('*').order('name');
+      if (catId) q = q.eq('category_id', catId);
+      const { data } = await q;
       setOptions('placeSelect', data || [], 'name');
+    }
+
+    function setCategoryOptions(selectId) {
+      const src = sel('categorySelect');
+      const dest = sel(selectId);
+      const oldVal = dest.value;
+      dest.innerHTML = '<option value="">-- select category --</option>';
+      Array.from(src.options).forEach(o => {
+        if (o.value) {
+          const opt = document.createElement('option');
+          opt.value = o.value;
+          opt.textContent = o.textContent;
+          dest.appendChild(opt);
+        }
+      });
+      if (oldVal) dest.value = oldVal;
+    }
+
+    function syncCategorySelects() {
+      // Keep placeCategoryFilter and placeCategorySelect in sync with categorySelect options
+      setCategoryOptions('placeCategoryFilter');
+      setCategoryOptions('placeCategorySelect');
     }
 
     async function loadCategories() {
       const { data } = await sb.from('categories').select('*').order('name');
       setOptions('categorySelect', data || [], 'name');
+      syncCategorySelects();
     }
 
     async function loadProducts() {
@@ -939,6 +973,7 @@
       const loc = val('placeLocation').trim(); if (loc) row.location = loc;
       const country = val('placeCountry').trim(); if (country) row.country = country;
       const city = val('placeCity').trim(); if (city) row.city = city;
+      const catId = val('placeCategorySelect'); if (catId) row.category_id = parseInt(catId);
       const { data, error } = await sb.from('places').insert(row).select().single();
       if (error) return msg('placeMsg', error.message, false);
       msg('placeMsg', 'Created!', true);
@@ -946,6 +981,7 @@
       sel('placeLocation').value = '';
       sel('placeCountry').value = '';
       sel('placeCity').value = '';
+      sel('placeCategorySelect').value = '';
       await loadPlaces();
       sel('placeSelect').value = data.id;
     }
